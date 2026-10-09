@@ -71,29 +71,38 @@
 <script>
     async function fetchCryptoPrices() {
         const ticker = document.getElementById('crypto-ticker');
-        // Define symbols to display
-        const coins = ['BTC', 'ETH', 'SOL', 'BNB'];
-        const apiUrl = `https://cryptocompare.com{coins.join(',')}&tsyms=USD`;
+        
+        // CoinLore API uses unique numeric IDs for coins:
+        // 90 = BTC, 80 = ETH, 54832 = SOL, 2710 = BNB
+        const coinMap = {
+            '90': { symbol: 'BTC' },
+            '80': { symbol: 'ETH' },
+            '54832': { symbol: 'SOL' },
+            '2710': { symbol: 'BNB' }
+        };
+
+        const apiUrl = 'https://coinlore.net';
 
         try {
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error('Network response error');
             const data = await response.json();
 
-            if (!data.RAW) throw new Error('Invalid data structure');
+            if (!Array.isArray(data)) throw new Error('Invalid data structure');
 
             let htmlContent = '';
-            coins.forEach(symbol => {
-                if (data.RAW[symbol] && data.RAW[symbol].USD) {
-                    const coinData = data.RAW[symbol].USD;
-                    const price = coinData.PRICE.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-                    const change = coinData.CHANGEPCT24HOUR;
+            data.forEach(coin => {
+                const config = coinMap[coin.id];
+                if (config) {
+                    const priceNum = parseFloat(coin.price_usd);
+                    const price = priceNum.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                    const change = parseFloat(coin.percent_change_24h);
                     const changeColor = change >= 0 ? '#10B981' : '#EF4444'; // Green for up, Red for down
                     const changeSign = change >= 0 ? '▲' : '▼';
 
                     htmlContent += `
                         <div style="display: inline-flex; align-items: center; margin-right: 25px;">
-                            <strong style="margin-right: 5px;">${symbol}:</strong> 
+                            <strong style="margin-right: 5px;">${config.symbol}:</strong> 
                             <span>${price}</span>
                             <span style="color: ${changeColor}; font-size: 12px; margin-left: 5px; font-weight: 600;">
                                 ${changeSign} ${Math.abs(change).toFixed(2)}%
@@ -116,6 +125,7 @@
     // Automatically update prices every 60 seconds
     setInterval(fetchCryptoPrices, 60000);
 </script>
+
 
 
     <!-- Grid Background -->
