@@ -50,10 +50,73 @@
 </head>
 
 <body>
-    mr
-    <div class="ticker-bar">
-        <div class="ticker-track" id="tickerTrack"></div>
-    </div>
+ <!-- Live Crypto Ticker Bar -->
+<div id="crypto-ticker" style="
+    background: #111827; 
+    color: #ffffff; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px; 
+    padding: 10px 20px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    gap: 20px; 
+    border-bottom: 1px solid #1f2937;
+    white-space: nowrap;
+    overflow-x: auto;
+">
+    <span>🔄 Loading live crypto prices...</span>
+</div>
+
+<script>
+    async function fetchCryptoPrices() {
+        const ticker = document.getElementById('crypto-ticker');
+        // Define symbols to display
+        const coins = ['BTC', 'ETH', 'SOL', 'BNB'];
+        const apiUrl = `https://cryptocompare.com{coins.join(',')}&tsyms=USD`;
+
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Network response error');
+            const data = await response.json();
+
+            if (!data.RAW) throw new Error('Invalid data structure');
+
+            let htmlContent = '';
+            coins.forEach(symbol => {
+                if (data.RAW[symbol] && data.RAW[symbol].USD) {
+                    const coinData = data.RAW[symbol].USD;
+                    const price = coinData.PRICE.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                    const change = coinData.CHANGEPCT24HOUR;
+                    const changeColor = change >= 0 ? '#10B981' : '#EF4444'; // Green for up, Red for down
+                    const changeSign = change >= 0 ? '▲' : '▼';
+
+                    htmlContent += `
+                        <div style="display: inline-flex; align-items: center; margin-right: 25px;">
+                            <strong style="margin-right: 5px;">${symbol}:</strong> 
+                            <span>${price}</span>
+                            <span style="color: ${changeColor}; font-size: 12px; margin-left: 5px; font-weight: 600;">
+                                ${changeSign} ${Math.abs(change).toFixed(2)}%
+                            </span>
+                        </div>
+                    `;
+                }
+            });
+
+            ticker.innerHTML = htmlContent || '<span>No data available</span>';
+        } catch (error) {
+            console.error('Error fetching crypto prices:', error);
+            ticker.innerHTML = '<span style="color: #EF4444;">⚠️ Failed to load live price data</span>';
+        }
+    }
+
+    // Run when the page loads
+    fetchCryptoPrices();
+    
+    // Automatically update prices every 60 seconds
+    setInterval(fetchCryptoPrices, 60000);
+</script>
+
 
     <!-- Grid Background -->
     <div class="grid-bg"></div>
